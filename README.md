@@ -1,4 +1,4 @@
-# Szervizcég Szoftveres Támogatása
+# Szervizelési Szolgáltatások Szoftveres Támogatása
 
 * Készítette: Kovács Zalán - D1ZQ36
 * E-mail: d1zq36@inf.elte.hu

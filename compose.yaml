@@ -1,0 +1,108 @@
+services:
+  frontend:
+    image: frontend
+    build: ./services/frontend-service
+    ports:
+      - "${APP_PORT}:3000"
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    depends_on:
+      redis:
+        condition: service_healthy
+  orders:
+    image: orders
+    build: ./services/orders-service
+    ports:
+      - "${ORDERS_PORT}:3001"
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - DB_HOST=orders-db
+      - DB_PORT=5432
+      - DB_NAME=${ORDERS_DB_NAME}
+      - DB_USER=${ORDERS_DB_USER}
+      - DB_PASSWORD=${ORDERS_DB_PASSWORD}
+    depends_on:
+      redis:
+        condition: service_healthy
+      orders-db:
+        condition: service_healthy
+  mailer:
+    image: mailer
+    build: ./services/mailer-service
+    ports:
+      - "${MAILER_PORT}:3002"
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    depends_on:
+      redis:
+        condition: service_healthy
+  auth:
+    image: auth
+    build: ./services/auth-service
+    ports:
+      - "${AUTH_PORT}:3003"
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - DB_HOST=auth-db
+      - DB_PORT=5432
+      - DB_NAME=${AUTH_DB_NAME}
+      - DB_USER=${AUTH_DB_USER}
+      - DB_PASSWORD=${AUTH_DB_PASSWORD}
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth-db:
+        condition: service_healthy
+  api:
+    image: api
+    build: ./services/api-service
+    ports:
+      - "${API_PORT}:3004"
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    depends_on:
+      redis:
+        condition: service_healthy
+  orders-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${ORDERS_DB_NAME}
+      - POSTGRES_USER=${ORDERS_DB_USER}
+      - POSTGRES_PASSWORD=${ORDERS_DB_PASSWORD}
+    volumes:
+      - orders-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ORDERS_DB_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  auth-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${AUTH_DB_NAME}
+      - POSTGRES_USER=${AUTH_DB_USER}
+      - POSTGRES_PASSWORD=${AUTH_DB_PASSWORD}
+    volumes:
+      - auth-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  orders-pgdata:
+  auth-pgdata:
